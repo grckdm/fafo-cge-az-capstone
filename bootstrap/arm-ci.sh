@@ -10,6 +10,10 @@
 # a matching token no matter what the workflow file says.
 set -euo pipefail
 
+# See bootstrap-state.sh for why: Git Bash on Windows mangles any argument
+# starting with '/' into a Windows path, corrupting every --scope below.
+export MSYS_NO_PATHCONV=1
+
 GH_OWNER="${1:?usage: ./arm-ci.sh <github-owner> [repo]}"
 REPO="${2:-fafo-cge-az-capstone}"
 SUB_ID=$(az account show --query id -o tsv)

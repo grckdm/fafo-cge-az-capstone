@@ -9,6 +9,13 @@
 # is a data-plane operation; subscription Owner/Contributor does not include it).
 set -euo pipefail
 
+# Git Bash on Windows rewrites any argument starting with '/' into a Windows
+# path (e.g. "/subscriptions/..." -> "C:/Program Files/Git/subscriptions/...").
+# That silently corrupts every --scope below and az fails with a confusing
+# "MissingSubscription" error. Set here so the script is correct regardless of
+# the caller's shell state.
+export MSYS_NO_PATHCONV=1
+
 LOCATION="${LOCATION:-eastus2}"
 RG_STATE="rg-fafo-tfstate"
 CONTAINER="tfstate"
@@ -24,9 +31,10 @@ echo ">> Resource group: $RG_STATE"
 az group create --name "$RG_STATE" --location "$LOCATION" \
   --tags env=shared owner=platform-eng purpose=terraform-state company=fafo --output none
 
-echo ">> Checking storage account name availability: $SA_NAME"
-AVAILABLE=$(az storage account check-name-availability --name "$SA_NAME" --query nameAvailable -o tsv)
-if [ "$AVAILABLE" = "true" ]; then
+echo ">> Checking whether storage account already exists: $SA_NAME"
+if az storage account show --name "$SA_NAME" --resource-group "$RG_STATE" --output none 2>/dev/null; then
+  echo ">> $SA_NAME already exists (idempotent re-run) — skipping create"
+else
   echo ">> Creating storage account: $SA_NAME"
   az storage account create \
     --name "$SA_NAME" \
@@ -38,8 +46,6 @@ if [ "$AVAILABLE" = "true" ]; then
     --allow-blob-public-access false \
     --tags env=shared owner=platform-eng purpose=terraform-state company=fafo \
     --output none
-else
-  echo ">> $SA_NAME already exists (idempotent re-run) — skipping create"
 fi
 
 echo ">> Enabling blob versioning — every state write becomes a recoverable version"
