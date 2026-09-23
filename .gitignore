@@ -1,0 +1,22 @@
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+plan.json
+crash.log
+
+# Backend config is machine-generated per deploy (bootstrap-state.sh)
+bootstrap/backend.hcl
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Local scratch / evidence artifacts (evidence lives in the store, not the repo)
+*.zip
+.DS_Store
+*-evidence.txt
+worm-test.txt

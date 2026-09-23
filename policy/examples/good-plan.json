@@ -1,0 +1,60 @@
+{
+  "resource_changes": [
+    {
+      "address": "azurerm_storage_account.evidence",
+      "type": "azurerm_storage_account",
+      "name": "evidence",
+      "change": {
+        "after": {
+          "name": "stfafoeviddev1a2b3c",
+          "allow_nested_items_to_be_public": false,
+          "shared_access_key_enabled": false
+        }
+      }
+    },
+    {
+      "address": "azurerm_storage_account.func_runtime",
+      "type": "azurerm_storage_account",
+      "name": "func_runtime",
+      "change": {
+        "after": {
+          "name": "stfafofuncruntimedev1a",
+          "allow_nested_items_to_be_public": false,
+          "shared_access_key_enabled": true
+        }
+      }
+    },
+    {
+      "address": "azurerm_cosmosdb_account.fafo",
+      "type": "azurerm_cosmosdb_account",
+      "name": "fafo",
+      "change": {
+        "after": {
+          "name": "cosmos-fafo-grc-dev"
+        }
+      }
+    },
+    {
+      "address": "azurerm_role_assignment.collector_policy_reader",
+      "type": "azurerm_role_assignment",
+      "name": "collector_policy_reader",
+      "change": {
+        "after": {
+          "role_definition_name": "Reader"
+        }
+      }
+    },
+    {
+      "address": "azurerm_management_group_policy_assignment.fafo_baseline",
+      "type": "azurerm_management_group_policy_assignment",
+      "name": "fafo_baseline",
+      "change": {
+        "after": {
+          "identity": [
+            { "type": "UserAssigned" }
+          ]
+        }
+      }
+    }
+  ]
+}

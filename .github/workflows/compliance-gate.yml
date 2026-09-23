@@ -1,0 +1,113 @@
+name: compliance-gate
+
+# Never wire this workflow's secrets/variables into a repo you don't own the
+# federation subject for. pull_request runs the workflow file AS MODIFIED BY
+# THE PR — on a public repo with `pull_request` OIDC, any fork's PR would run
+# with these credentials if the federated app registration matched more than
+# this exact repo. bootstrap/arm-ci.sh federates to repo:<owner>/<repo> only.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARM_USE_CLI: "true"
+
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: terraform fmt -check (every stage)
+        run: |
+          for stage in stages/*/; do
+            echo "::group::fmt $stage"
+            terraform -chdir="$stage" fmt -check -recursive
+            echo "::endgroup::"
+          done
+
+      - name: tflint
+        uses: terraform-linters/setup-tflint@v4
+      - run: |
+          for stage in stages/*/; do
+            echo "::group::tflint $stage"
+            (cd "$stage" && tflint --init && tflint)
+            echo "::endgroup::"
+          done
+
+      - name: checkov
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: stages/
+          quiet: true
+          soft_fail: false
+          skip_check: CKV_AZURE_50 # Y1 consumption plans intentionally lack always-on; not applicable to timer/HTTP functions
+
+  policy-gate:
+    runs-on: ubuntu-latest
+    needs: static-checks
+    strategy:
+      matrix:
+        stage:
+          - 01-foundation
+          - 02-evidence-store
+          - 03-reporting
+          - 04-enforcement
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: terraform init
+        working-directory: stages/${{ matrix.stage }}
+        run: terraform init -backend-config="storage_account_name=${{ vars.STATE_STORAGE_ACCOUNT }}"
+
+      - name: terraform plan
+        working-directory: stages/${{ matrix.stage }}
+        env:
+          TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_state_storage_account: ${{ vars.STATE_STORAGE_ACCOUNT }}
+          TF_VAR_owner_email: ${{ vars.OWNER_EMAIL }}
+        run: |
+          terraform plan -out=tfplan -input=false
+          terraform show -json tfplan > plan.json
+
+      - name: Install conftest
+        run: |
+          curl -sL https://github.com/open-policy-agent/conftest/releases/download/v0.56.0/conftest_0.56.0_Linux_x86_64.tar.gz | tar xz
+          sudo mv conftest /usr/local/bin
+
+      - name: conftest gate (this stage's plan)
+        run: conftest test stages/${{ matrix.stage }}/plan.json -p policy/
+
+  policy-self-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install conftest
+        run: |
+          curl -sL https://github.com/open-policy-agent/conftest/releases/download/v0.56.0/conftest_0.56.0_Linux_x86_64.tar.gz | tar xz
+          sudo mv conftest /usr/local/bin
+      - name: Rules must pass the good example and fail the bad one
+        run: |
+          conftest test policy/examples/good-plan.json -p policy/
+          if conftest test policy/examples/bad-plan.json -p policy/; then
+            echo "bad-plan.json should have failed conftest but passed — a rule regressed"
+            exit 1
+          fi

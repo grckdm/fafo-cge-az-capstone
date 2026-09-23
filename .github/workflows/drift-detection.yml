@@ -1,0 +1,97 @@
+name: drift-detection
+
+# Two independent questions, run on a schedule so evidence accumulates over
+# time instead of appearing only the night before a review:
+#   1. Does reality still match code?      -> scheduled `terraform plan` per stage
+#   2. Who is touching reality meanwhile?  -> Activity Log tripwire for human writes
+on:
+  schedule:
+    - cron: "17 13 * * *" # 13:17 UTC daily — off the hour, avoids the herd
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARM_USE_CLI: "true"
+
+jobs:
+  plan-drift:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        stage:
+          - 01-foundation
+          - 02-evidence-store
+          - 03-reporting
+          - 04-enforcement
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: terraform init
+        working-directory: stages/${{ matrix.stage }}
+        run: terraform init -backend-config="storage_account_name=${{ vars.STATE_STORAGE_ACCOUNT }}"
+
+      - name: terraform plan (detect drift)
+        id: plan
+        working-directory: stages/${{ matrix.stage }}
+        env:
+          TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          TF_VAR_state_storage_account: ${{ vars.STATE_STORAGE_ACCOUNT }}
+          TF_VAR_owner_email: ${{ vars.OWNER_EMAIL }}
+        run: |
+          set +e
+          terraform plan -detailed-exitcode -input=false
+          code=$?
+          echo "exitcode=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Fail if drift detected
+        if: steps.plan.outputs.exitcode == '2'
+        run: |
+          echo "::error::Drift detected in stages/${{ matrix.stage }} — reality no longer matches committed Terraform. Someone changed something out-of-band."
+          exit 1
+
+  activity-log-tripwire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Query Activity Log for human-caller writes in the sandbox
+        run: |
+          az extension add --name log-analytics --yes
+          WS=$(az monitor log-analytics workspace show \
+            --workspace-name law-fafo-sandbox \
+            --resource-group rg-fafo-sandbox-dev \
+            --query customerId -o tsv)
+
+          RESULT=$(az monitor log-analytics query --workspace "$WS" --analytics-query \
+            "AzureActivity | where TimeGenerated > ago(1d) | where ActivityStatusValue == 'Success' | where OperationNameValue endswith '/WRITE' or OperationNameValue endswith '/DELETE' | where Caller contains '@' | project TimeGenerated, Caller, OperationNameValue, ResourceId" \
+            -o json)
+
+          echo "## Activity Log tripwire — human-caller writes, last 24h" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          echo "$RESULT" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+          COUNT=$(echo "$RESULT" | jq 'length')
+          echo "Found $COUNT human-caller write(s) in the last 24h."
+          # Informational by design: a human touching the sandbox during active
+          # development isn't itself a failure — the point is that it's now
+          # visible and timestamped, not that it's forbidden.

@@ -1,0 +1,46 @@
+{
+  "resource_changes": [
+    {
+      "address": "azurerm_storage_account.oops",
+      "type": "azurerm_storage_account",
+      "name": "oops",
+      "change": {
+        "after": {
+          "name": "badstorage123",
+          "allow_nested_items_to_be_public": true,
+          "shared_access_key_enabled": true
+        }
+      }
+    },
+    {
+      "address": "azurerm_cosmosdb_account.oops",
+      "type": "azurerm_cosmosdb_account",
+      "name": "oops",
+      "change": {
+        "after": {
+          "name": "myaccount"
+        }
+      }
+    },
+    {
+      "address": "azurerm_role_assignment.too_broad",
+      "type": "azurerm_role_assignment",
+      "name": "too_broad",
+      "change": {
+        "after": {
+          "role_definition_name": "Owner"
+        }
+      }
+    },
+    {
+      "address": "azurerm_management_group_policy_assignment.no_identity",
+      "type": "azurerm_management_group_policy_assignment",
+      "name": "no_identity",
+      "change": {
+        "after": {
+          "identity": null
+        }
+      }
+    }
+  ]
+}
