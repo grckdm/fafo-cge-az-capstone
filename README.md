@@ -1,8 +1,8 @@
 # FAFO Inc. — GRC Engineering Pipeline (CGE-AZ Capstone)
 
 FAFO Inc. operates across nearly every global consumer sector — technology,
-banking, utilities, media — and controls roughly 70% of the global consumer
-credit and debt industry. That scale means two things for this repo: the
+banking, utilities, media — and controls roughly 70% of the global
+health records and patient information industry. That scale means two things for this repo: the
 blast radius of a misconfigured Key Vault or an unencrypted transit path isn't
 hypothetical, and an assessor asking "prove it" needs an answer that traces to
 a stored record, not a screenshot.

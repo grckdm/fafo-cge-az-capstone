@@ -50,7 +50,7 @@ CONTROLS = [
         "csfCategoryName": "Platform Security",
         "hipaaSafeguard": "164.312(a)(1)",
         "hipaaSafeguardName": "Access Control",
-        "rationale": "FAFO Inc.'s credit/debt data model makes secrets exposure a network-reachability question that must always resolve to 'no'.",
+        "rationale": "FAFO Inc.'s health-records data model makes secrets exposure a network-reachability question that must always resolve to 'no'.",
     },
     {
         "id": "fafo-require-min-tls-12",

@@ -40,7 +40,7 @@ variable "min_tls_version_policy_effect" {
 }
 
 variable "kv_public_network_policy_effect" {
-  description = "Effect for the deny-keyvault-public-network policy. FAFO Inc.'s credit/debt data model means secrets access is never a network-open question."
+  description = "Effect for the deny-keyvault-public-network policy. FAFO Inc.'s health-records data model means secrets access is never a network-open question."
   type        = string
   default     = "Deny"
   validation {

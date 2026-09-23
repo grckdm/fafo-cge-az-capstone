@@ -53,7 +53,7 @@ resource "azurerm_policy_definition" "naming_convention" {
 
 # --- PR.PS (Protect — Platform Security): a Key Vault reachable from the public
 #     internet is a hardening gap regardless of what secrets it holds. FAFO Inc.'s
-#     credit/debt data model makes this non-negotiable, not situational. ---
+#     health-records data model makes this non-negotiable, not situational. ---
 
 resource "azurerm_policy_definition" "deny_kv_public_network" {
   name                = "fafo-deny-kv-public-network"

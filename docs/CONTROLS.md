@@ -7,10 +7,10 @@ category they serve. Keep this file current with `stages/*/policies.tf`,
 too, in the same PR.
 
 CSF 2.0 is the primary crosswalk. Each control also carries a HIPAA Security
-Rule safeguard as an additive second layer (FAFO Inc.'s consumer-credit data
-model overlaps meaningfully with regulated personal data handling, even though
-this capstone targets CSF 2.0, not a HIPAA audit) — it supplements the CSF
-mapping, it doesn't replace it.
+Rule safeguard as an additive second layer — FAFO Inc. holds health records
+and patient information at scale, so HIPAA is a direct, deliberate fit here,
+not a stretch. It supplements the CSF mapping, it doesn't replace it (this
+capstone targets CSF 2.0, not a HIPAA audit).
 
 ## Policy controls (stages/01-foundation/policies.tf, stages/04-enforcement/main.tf)
 
