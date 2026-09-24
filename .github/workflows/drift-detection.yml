@@ -43,9 +43,16 @@ jobs:
           ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
         run: terraform init -backend-config="storage_account_name=${{ vars.STATE_STORAGE_ACCOUNT }}"
 
+      # continue-on-error + steps.<id>.outcome, not a hand-rolled `set +e` /
+      # $GITHUB_OUTPUT exit-code capture: the manual version silently never
+      # triggered the next step (validated live -- a real plan diff existed,
+      # yet "Fail if drift detected" showed skipped every time). This is the
+      # standard, actually-reliable pattern for "run something that may exit
+      # non-zero, decide what to do about it in a later step."
       - name: terraform plan (detect drift)
         id: plan
         working-directory: stages/${{ matrix.stage }}
+        continue-on-error: true
         env:
           ARM_USE_OIDC: "true"
           ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
@@ -54,17 +61,13 @@ jobs:
           TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
           TF_VAR_state_storage_account: ${{ vars.STATE_STORAGE_ACCOUNT }}
           TF_VAR_owner_email: ${{ vars.OWNER_EMAIL }}
-        run: |
-          set +e
-          terraform plan -detailed-exitcode -input=false
-          code=$?
-          echo "exitcode=$code" >> "$GITHUB_OUTPUT"
-          exit 0
+          TF_VAR_deployer_principal_id: ${{ vars.DEPLOYER_PRINCIPAL_ID }}
+        run: terraform plan -detailed-exitcode -input=false
 
       - name: Fail if drift detected
-        if: steps.plan.outputs.exitcode == '2'
+        if: steps.plan.outcome == 'failure'
         run: |
-          echo "::error::Drift detected in stages/${{ matrix.stage }} — reality no longer matches committed Terraform. Someone changed something out-of-band."
+          echo "::error::stages/${{ matrix.stage }}: terraform plan exited non-zero -- either drift (reality no longer matches committed Terraform, someone changed something out-of-band) or a genuine plan error. See the 'terraform plan (detect drift)' step above for the actual diff or error."
           exit 1
 
   activity-log-tripwire:

@@ -57,18 +57,25 @@ az role assignment create --assignee-object-id "$SP_ID" --assignee-principal-typ
   --scope "/subscriptions/$SUB_ID/resourceGroups/rg-fafo-tfstate" --output none 2>/dev/null || true
 
 STATE_SA=$(grep storage_account_name "$(dirname "$0")/backend.hcl" 2>/dev/null | tr -d ' "' | cut -d= -f2 || echo "<from bootstrap/backend.hcl>")
+DEPLOYER_ID=$(az ad signed-in-user show --query id -o tsv 2>/dev/null || echo "<az ad signed-in-user show --query id -o tsv>")
 
 cat <<EOF
 
-Done. Add these five repository VARIABLES (Settings -> Secrets and variables
+Done. Add these six repository VARIABLES (Settings -> Secrets and variables
 -> Actions -> Variables -> New repository variable) — variables, not secrets,
-because OIDC leaves nothing secret to store:
+because OIDC leaves nothing secret to store. Add each as its OWN variable, not
+one variable containing all six lines:
 
-  AZURE_CLIENT_ID        $APP_ID
-  AZURE_TENANT_ID        $TENANT_ID
-  AZURE_SUBSCRIPTION_ID  $SUB_ID
-  STATE_STORAGE_ACCOUNT  $STATE_SA
-  OWNER_EMAIL            <your email>
+  AZURE_CLIENT_ID         $APP_ID
+  AZURE_TENANT_ID         $TENANT_ID
+  AZURE_SUBSCRIPTION_ID   $SUB_ID
+  STATE_STORAGE_ACCOUNT   $STATE_SA
+  OWNER_EMAIL             <your email>
+  DEPLOYER_PRINCIPAL_ID   $DEPLOYER_ID
+
+DEPLOYER_PRINCIPAL_ID must be the SAME value used for TF_VAR_deployer_principal_id
+when you applied stage 02 locally (stages/02-evidence-store/variables.tf explains
+why this can't just be resolved dynamically in CI).
 
 Then enable compliance-gate and drift-detection in the Actions tab, and protect
 main requiring the compliance-gate check.

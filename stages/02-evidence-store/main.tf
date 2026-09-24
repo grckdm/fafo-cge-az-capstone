@@ -208,7 +208,7 @@ resource "azurerm_cosmosdb_sql_role_assignment" "deployer_cosmos_write" {
   resource_group_name = data.terraform_remote_state.foundation.outputs.evidence_resource_group_name
   account_name        = azurerm_cosmosdb_account.fafo.name
   role_definition_id  = "${azurerm_cosmosdb_account.fafo.id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002"
-  principal_id        = data.azurerm_client_config.current.object_id
+  principal_id        = var.deployer_principal_id
   scope               = azurerm_cosmosdb_account.fafo.id
 }
 
@@ -217,5 +217,5 @@ resource "azurerm_cosmosdb_sql_role_assignment" "deployer_cosmos_write" {
 resource "azurerm_role_assignment" "deployer_blob_write" {
   scope                = azurerm_storage_account.evidence.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = data.azurerm_client_config.current.object_id
+  principal_id         = var.deployer_principal_id
 }

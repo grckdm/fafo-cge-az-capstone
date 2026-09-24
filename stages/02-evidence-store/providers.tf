@@ -26,8 +26,6 @@ provider "azurerm" {
   storage_use_azuread = true
 }
 
-data "azurerm_client_config" "current" {}
-
 # Cross-stage composition through remote state outputs — never a cross-stage
 # resource reference. Stage 02 reads stage 01's outputs; it cannot mutate stage
 # 01's resources, only read where things landed.

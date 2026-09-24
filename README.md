@@ -84,6 +84,7 @@ cd ../02-evidence-store
 terraform init -backend-config=../../bootstrap/backend.hcl
 export TF_VAR_subscription_id=$ARM_SUBSCRIPTION_ID
 export TF_VAR_state_storage_account=$(grep storage_account_name ../../bootstrap/backend.hcl | cut -d'"' -f2)
+export TF_VAR_deployer_principal_id=$(az ad signed-in-user show --query id -o tsv)
 terraform plan   # count: Cosmos + 3 containers, WORM container, 2 runtime storage accounts, collector app, 2 role grants
 terraform apply  # Cosmos takes several minutes
 ```
