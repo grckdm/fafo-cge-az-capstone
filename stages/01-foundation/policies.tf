@@ -91,18 +91,28 @@ resource "azurerm_policy_definition" "deny_kv_public_network" {
 #     TLS 1.2 at minimum. ---
 
 resource "azurerm_policy_definition" "require_min_tls" {
-  name                = "fafo-require-min-tls-12"
-  display_name        = "FAFO Inc.: App Services must require TLS 1.2 minimum"
-  description         = "Audits or denies App Service apps whose minimum TLS version is below 1.2."
-  policy_type         = "Custom"
-  mode                = "Indexed"
+  name         = "fafo-require-min-tls-12"
+  display_name = "FAFO Inc.: App Services must require TLS 1.2 minimum"
+  description  = "Audits or denies App Service 'web' config resources whose minimum TLS version is below 1.2."
+  policy_type  = "Custom"
+  # "All" (not "Indexed"): Microsoft.Web/sites/config is a child resource and
+  # doesn't support tags/location, so Indexed mode would silently skip it.
+  mode                = "All"
   management_group_id = azurerm_management_group.sandbox.id
 
+  # Targets Microsoft.Web/sites/config directly rather than aliasing in from
+  # Microsoft.Web/sites — that alias (Microsoft.Web/sites/config/web.minTlsVersion)
+  # resolves against BOTH resource types, and Azure's policy compiler rejects
+  # the definition with MultiTargetPolicyNotApplicable because the "type equals
+  # Microsoft.Web/sites" guard can never be satisfied by the config child
+  # resource the alias actually belongs to. Targeting the child type directly
+  # removes the ambiguity.
   policy_rule = jsonencode({
     if = {
       allOf = [
-        { field = "type", equals = "Microsoft.Web/sites" },
-        { field = "Microsoft.Web/sites/config/web.minTlsVersion", less = "1.2" }
+        { field = "type", equals = "Microsoft.Web/sites/config" },
+        { field = "name", equals = "web" },
+        { field = "Microsoft.Web/sites/config/minTlsVersion", less = "1.2" }
       ]
     }
     then = {

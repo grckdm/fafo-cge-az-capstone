@@ -23,8 +23,12 @@ variable "owner_email" {
 variable "baseline_defender_plans" {
   description = "Defender for Cloud plans this baseline requires at Standard tier, keyed by plan name, valued by subplan (empty string for plans with none). Scoped to the two resource types our custom policies already govern — Key Vault and Storage — so discovery and policy enforcement point at the same attack surface."
   type        = map(string)
+  # KeyVaults' subplan is "PerKeyVault" in every subscription we've observed —
+  # not an empty/no-subplan option like some other plans. Setting it explicitly
+  # here (rather than "") avoids Terraform wanting to destroy+recreate the
+  # imported pricing resource just to null out a subplan Azure always sets.
   default = {
-    KeyVaults       = ""
+    KeyVaults       = "PerKeyVault"
     StorageAccounts = "DefenderForStorageV2"
   }
 }

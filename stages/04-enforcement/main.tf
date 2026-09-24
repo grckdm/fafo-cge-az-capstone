@@ -7,24 +7,32 @@ locals {
   enforcement_mode = var.remediation_mode == "enforce" ? "Default" : "DoNotEnforce"
 }
 
-# Blast radius: sets Microsoft.Web/sites/config/web.minTlsVersion to '1.2' on
-# existing App Services that are below it. Cannot delete anything, cannot touch
-# any other property, cannot reach any resource type but Microsoft.Web/sites.
+# Blast radius: sets minTlsVersion to '1.2' on existing App Service 'web'
+# config resources that are below it. Cannot delete anything, cannot touch any
+# other property, cannot reach any resource type but Microsoft.Web/sites/config.
 # Rollback: set remediation_mode back to "audit" and apply — the Modify effect
 # stops firing; nothing it already fixed reverts on its own (by design: a
 # rollback of the CONTROL is not a rollback of resources already made safer).
+#
+# Targets Microsoft.Web/sites/config directly (matching stages/01-foundation's
+# fafo-require-min-tls-12) rather than aliasing in from Microsoft.Web/sites —
+# that alias resolves against both resource types and Azure's policy compiler
+# rejects the definition outright (MultiTargetPolicyNotApplicable) if the "if"
+# clause's type guard can never be satisfied by the resource type the alias
+# actually belongs to.
 resource "azurerm_policy_definition" "fix_min_tls" {
   name                = "fafo-fix-min-tls-12"
   display_name        = "FAFO Inc.: remediate App Service TLS below 1.2 (${var.remediation_mode})"
   policy_type         = "Custom"
-  mode                = "Indexed"
+  mode                = "All"
   management_group_id = local.mg_id
 
   policy_rule = jsonencode({
     if = {
       allOf = [
-        { field = "type", equals = "Microsoft.Web/sites" },
-        { field = "Microsoft.Web/sites/config/web.minTlsVersion", less = "1.2" }
+        { field = "type", equals = "Microsoft.Web/sites/config" },
+        { field = "name", equals = "web" },
+        { field = "Microsoft.Web/sites/config/minTlsVersion", less = "1.2" }
       ]
     }
     then = {
@@ -36,7 +44,7 @@ resource "azurerm_policy_definition" "fix_min_tls" {
         ]
         conflictEffect = "audit"
         operations = [
-          { operation = "addOrReplace", field = "Microsoft.Web/sites/config/web.minTlsVersion", value = "1.2" }
+          { operation = "addOrReplace", field = "Microsoft.Web/sites/config/minTlsVersion", value = "1.2" }
         ]
       }
     }

@@ -30,7 +30,7 @@ capstone targets CSF 2.0, not a HIPAA audit).
 - **Rollback:** set the initiative's `kvNetworkEffect`/DINE effect to `Disabled` and re-apply, or `terraform destroy` stage 01's policy assignment. Diagnostic settings already deployed are left in place — rollback stops future remediation, it does not undo a monitoring improvement already made.
 
 **`fafo-fix-min-tls-12`**
-- **What changes:** rewrites `Microsoft.Web/sites/config/web.minTlsVersion` to `1.2` on any App Service found below it.
+- **What changes:** rewrites `minTlsVersion` to `1.2` on any App Service `web` config resource found below it.
 - **What could break:** any client or integration that only speaks TLS 1.0/1.1 loses connectivity to that app immediately. This is the control working as intended, but it is a real, user-facing compatibility break — not a rollback-free operation from the client's perspective.
 - **Rollback:** set `remediation_mode` back to `"audit"` and apply — stops further remediation instantly (the role grant that lets the identity write App Service config is only created when `remediation_mode != "audit"`, so reverting removes the *capability*, not just the assignment's enforce flag). Already-remediated apps stay at TLS 1.2; they are not reverted. An app that legitimately needs a lower minimum temporarily should get a scoped Azure Policy exemption, not a global mode rollback.
 
