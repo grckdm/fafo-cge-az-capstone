@@ -20,7 +20,7 @@ resource "azurerm_storage_account" "reporter_runtime" {
   resource_group_name      = local.evidence_rg
   location                 = var.functions_location
   account_tier             = "Standard"
-  account_replication_type = "ZRS"
+  account_replication_type = "LRS"
   min_tls_version          = "TLS1_2"
 
   allow_nested_items_to_be_public = false
