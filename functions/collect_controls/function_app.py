@@ -5,7 +5,7 @@ Pulls Azure Policy compliance states for the mg-fafo-sandbox management group
 the Cosmos `findings` container. Two triggers, one collection routine:
 
   collect_now      HTTP, function-key auth  — on-demand runs, testing
-  collect_nightly  Timer, 01:00 UTC daily   — the run history the rubric wants
+  collect_nightly  Timer, 04:00 UTC daily   — the run history the rubric wants
                                                to see accumulate over time
 
 Authenticates via the Function App's system-assigned identity (DefaultAzureCredential
@@ -118,7 +118,7 @@ def collect_now(req: func.HttpRequest) -> func.HttpResponse:
 
 
 @app.function_name(name="collect_nightly")
-@app.timer_trigger(schedule="0 0 1 * * *", arg_name="timer", run_on_startup=False)
+@app.timer_trigger(schedule="0 0 4 * * *", arg_name="timer", run_on_startup=False)
 def collect_nightly(timer: func.TimerRequest) -> None:
     result = _run_collection()
     logging.info("collect_nightly: run %s wrote %d documents", result["runId"], result["documents"])

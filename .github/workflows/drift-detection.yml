@@ -6,7 +6,7 @@ name: drift-detection
 #   2. Who is touching reality meanwhile?  -> Activity Log tripwire for human writes
 on:
   schedule:
-    - cron: "0 1 * * *" # 01:00 UTC daily
+    - cron: "17 13 * * *" # 13:17 UTC daily — off the hour, avoids the herd
   workflow_dispatch: {}
 
 permissions:

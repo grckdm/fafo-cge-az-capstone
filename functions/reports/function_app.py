@@ -206,7 +206,7 @@ def soa_now(req: func.HttpRequest) -> func.HttpResponse:
 
 
 @app.function_name(name="soa_weekly")
-@app.timer_trigger(schedule="0 0 1 * * 3", arg_name="timer", run_on_startup=False)
+@app.timer_trigger(schedule="0 0 8 * * 3", arg_name="timer", run_on_startup=False)
 def soa_weekly(timer: func.TimerRequest) -> None:
     result = _run_soa()
     logging.info("soa_weekly: %s", result)
@@ -221,7 +221,7 @@ def audit_now(req: func.HttpRequest) -> func.HttpResponse:
 
 
 @app.function_name(name="audit_daily")
-@app.timer_trigger(schedule="0 0 1 * * *", arg_name="timer", run_on_startup=False)
+@app.timer_trigger(schedule="0 30 6 * * *", arg_name="timer", run_on_startup=False)
 def audit_daily(timer: func.TimerRequest) -> None:
     result = _run_audit_summary()
     logging.info("audit_daily: %s", result)
