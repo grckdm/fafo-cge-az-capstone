@@ -14,7 +14,7 @@ resource "azurerm_policy_definition" "naming_convention" {
   management_group_id = azurerm_management_group.sandbox.id
 
   policy_rule = jsonencode({
-    if = {
+    "if" = {
       anyOf = [
         { allOf = [
           { field = "type", equals = "Microsoft.Storage/storageAccounts" },
@@ -34,7 +34,7 @@ resource "azurerm_policy_definition" "naming_convention" {
         ] }
       ]
     }
-    then = {
+    "then" = {
       effect = "[parameters('effect')]"
     }
   })
@@ -64,13 +64,13 @@ resource "azurerm_policy_definition" "deny_kv_public_network" {
   management_group_id = azurerm_management_group.sandbox.id
 
   policy_rule = jsonencode({
-    if = {
+    "if" = {
       allOf = [
         { field = "type", equals = "Microsoft.KeyVault/vaults" },
         { field = "Microsoft.KeyVault/vaults/publicNetworkAccess", notEquals = "Disabled" }
       ]
     }
-    then = {
+    "then" = {
       effect = "[parameters('effect')]"
     }
   })
@@ -108,14 +108,14 @@ resource "azurerm_policy_definition" "require_min_tls" {
   # resource the alias actually belongs to. Targeting the child type directly
   # removes the ambiguity.
   policy_rule = jsonencode({
-    if = {
+    "if" = {
       allOf = [
         { field = "type", equals = "Microsoft.Web/sites/config" },
         { field = "name", equals = "web" },
         { field = "Microsoft.Web/sites/config/minTlsVersion", less = "1.2" }
       ]
     }
-    then = {
+    "then" = {
       effect = "[parameters('effect')]"
     }
   })
@@ -145,11 +145,11 @@ resource "azurerm_policy_definition" "kv_diagnostics_dine" {
   management_group_id = azurerm_management_group.sandbox.id
 
   policy_rule = jsonencode({
-    if = {
+    "if" = {
       field  = "type"
       equals = "Microsoft.KeyVault/vaults"
     }
-    then = {
+    "then" = {
       effect = "[parameters('effect')]"
       details = {
         type = "Microsoft.Insights/diagnosticSettings"

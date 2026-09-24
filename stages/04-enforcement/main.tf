@@ -28,14 +28,14 @@ resource "azurerm_policy_definition" "fix_min_tls" {
   management_group_id = local.mg_id
 
   policy_rule = jsonencode({
-    if = {
+    "if" = {
       allOf = [
         { field = "type", equals = "Microsoft.Web/sites/config" },
         { field = "name", equals = "web" },
         { field = "Microsoft.Web/sites/config/minTlsVersion", less = "1.2" }
       ]
     }
-    then = {
+    "then" = {
       effect = local.effect
       details = local.effect == "Audit" ? null : {
         roleDefinitionIds = [

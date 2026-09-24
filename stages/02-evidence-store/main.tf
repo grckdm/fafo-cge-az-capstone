@@ -76,7 +76,7 @@ resource "azurerm_storage_account" "evidence" {
   resource_group_name      = data.terraform_remote_state.foundation.outputs.evidence_resource_group_name
   location                 = var.location
   account_tier             = "Standard"
-  account_replication_type = "LRS"
+  account_replication_type = "ZRS"
   min_tls_version          = "TLS1_2"
 
   allow_nested_items_to_be_public = false
@@ -84,6 +84,9 @@ resource "azurerm_storage_account" "evidence" {
 
   blob_properties {
     versioning_enabled = true
+    delete_retention_policy {
+      days = 30
+    }
   }
 
   tags = {
@@ -119,8 +122,16 @@ resource "azurerm_storage_account" "func_runtime" {
   resource_group_name      = data.terraform_remote_state.foundation.outputs.evidence_resource_group_name
   location                 = var.functions_location
   account_tier             = "Standard"
-  account_replication_type = "LRS"
+  account_replication_type = "ZRS"
   min_tls_version          = "TLS1_2"
+
+  allow_nested_items_to_be_public = false
+
+  blob_properties {
+    delete_retention_policy {
+      days = 30
+    }
+  }
 
   tags = {
     env     = var.environment
@@ -147,6 +158,7 @@ resource "azurerm_linux_function_app" "collector" {
   storage_account_name       = azurerm_storage_account.func_runtime.name
   storage_account_access_key = azurerm_storage_account.func_runtime.primary_access_key
   service_plan_id            = azurerm_service_plan.collector.id
+  https_only                 = true
 
   site_config {
     application_stack {
