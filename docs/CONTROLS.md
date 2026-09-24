@@ -16,7 +16,7 @@ capstone targets CSF 2.0, not a HIPAA audit).
 
 | Control ID | Resource type | Default effect | CSF 2.0 category | HIPAA safeguard | What it does |
 |---|---|---|---|---|---|
-| `fafo-enforce-naming-convention` | Storage, Key Vault, App Service, Cosmos DB | Deny | **ID.AM** — Asset Management | §164.310(d)(1) Device and Media Controls | Denies any of these resource types not carrying its required name prefix (`stfafo-`, `kv-fafo-`, `app-fafo-`, `cosmos-fafo-`). Asset inventory starts with a name you can grep for. |
+| `fafo-enforce-naming-convention` | Storage, Key Vault, App Service, Cosmos DB | Deny | **ID.AM** — Asset Management | §164.310(d)(1) Device and Media Controls | Denies any of these resource types not carrying its required name prefix (`stfafo-`, `kv-fafo-`, `func-fafo-`, `cosmos-fafo-`). Asset inventory starts with a name you can grep for. |
 | `fafo-deny-kv-public-network` | Key Vault | Deny | **PR.PS** — Platform Security | §164.312(a)(1) Access Control | Denies a Key Vault unless `publicNetworkAccess` is `Disabled`. |
 | `fafo-require-min-tls-12` | App Service | Audit | **PR.DS** — Data Security | §164.312(e)(2)(ii) Encryption (Transmission Security, addressable) | Flags App Services below TLS 1.2. New control, starts in Audit; `fafo-fix-min-tls-12` below is its escalation path. |
 | `fafo-dine-kv-diagnostics` | Key Vault | DeployIfNotExists | **DE.CM** — Continuous Monitoring | §164.312(b) Audit Controls | Deploys a diagnostic setting sending `AuditEvent` logs to `law-fafo-sandbox` if one doesn't already exist. |

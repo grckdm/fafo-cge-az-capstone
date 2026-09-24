@@ -8,7 +8,7 @@
 resource "azurerm_policy_definition" "naming_convention" {
   name                = "fafo-enforce-naming-convention"
   display_name        = "FAFO Inc.: resource names must carry the fafo type prefix"
-  description         = "Denies storage accounts, key vaults, app services, and Cosmos accounts whose name doesn't start with their required prefix (stfafo-, kv-fafo-, app-fafo-, cosmos-fafo-). Asset inventory starts with a name you can grep for."
+  description         = "Denies storage accounts, key vaults, App Service/Function apps, and Cosmos accounts whose name doesn't start with their required prefix (stfafo-, kv-fafo-, func-fafo-, cosmos-fafo-). Asset inventory starts with a name you can grep for."
   policy_type         = "Custom"
   mode                = "Indexed"
   management_group_id = azurerm_management_group.sandbox.id
@@ -26,7 +26,7 @@ resource "azurerm_policy_definition" "naming_convention" {
         ] },
         { allOf = [
           { field = "type", equals = "Microsoft.Web/sites" },
-          { field = "name", notLike = "app-fafo-*" }
+          { field = "name", notLike = "func-fafo-*" }
         ] },
         { allOf = [
           { field = "type", equals = "Microsoft.DocumentDB/databaseAccounts" },

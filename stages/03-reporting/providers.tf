@@ -19,6 +19,9 @@ terraform {
 provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
+  # See stages/02-evidence-store/providers.tf — this stage also touches the
+  # keyless evidence storage account (data source + role assignment).
+  storage_use_azuread = true
 }
 
 data "terraform_remote_state" "foundation" {

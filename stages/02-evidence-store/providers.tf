@@ -19,6 +19,11 @@ terraform {
 provider "azurerm" {
   features {}
   subscription_id = var.subscription_id
+  # Required to CREATE a storage account with shared_access_key_enabled = false:
+  # without this, the provider's own post-create readiness polling defaults to
+  # key-based auth against the account it just created — which that account now
+  # refuses by design — and the apply fails with KeyBasedAuthenticationNotPermitted.
+  storage_use_azuread = true
 }
 
 data "azurerm_client_config" "current" {}
