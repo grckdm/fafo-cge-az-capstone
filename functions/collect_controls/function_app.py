@@ -45,20 +45,31 @@ def _arm_token() -> str:
 
 def _fetch_policy_states() -> list[dict]:
     """POST the latest policyStates queryResults for the sandbox management
-    group. Paginates on @odata.nextLink until exhausted."""
+    group, filtered to OUR OWN initiative. Without the $filter, this endpoint
+    returns compliance states for EVERY policy assignment effective at this
+    scope — including Azure's built-in benchmark initiative that's assigned to
+    every subscription by default, which would dilute the findings container
+    with ~50 unrelated GUID-named policies that have no entry in the
+    controls/mappings crosswalk. Paginates on @odata.nextLink until exhausted."""
     url = (
         f"https://management.azure.com{MG_SCOPE}"
         f"/providers/Microsoft.PolicyInsights/policyStates/latest/queryResults"
-        f"?api-version={POLICY_API_VERSION}"
     )
+    # requests handles percent-encoding of the space/quote characters in the
+    # $filter value when passed via params — building this into the f-string
+    # URL directly risks an improperly-encoded request.
+    params = {"api-version": POLICY_API_VERSION, "$filter": "PolicyAssignmentName eq 'fafo-grc-baseline'"}
     headers = {"Authorization": f"Bearer {_arm_token()}"}
     results: list[dict] = []
     while url:
-        resp = requests.post(url, headers=headers, timeout=30)
+        resp = requests.post(url, headers=headers, params=params, timeout=30)
         resp.raise_for_status()
         body = resp.json()
         results.extend(body.get("value", []))
+        # @odata.nextLink is a complete, already-encoded URL from Azure —
+        # params must not be reapplied on subsequent requests.
         url = body.get("@odata.nextLink")
+        params = None
     return results
 
 
